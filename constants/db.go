@@ -11,15 +11,20 @@ var DB *sql.DB
 
 func ConnectDB() {
 	var err error
-	DB, err = sql.Open("mysql", "root:naveen@tcp(127.0.0.1:3306)/ledger")
+
+	// IMPORTANT: username = root, password = naveen
+	DB, err = sql.Open(
+		"mysql",
+		"root:naveen@tcp(localhost:3306)/ledgerdb",
+	)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	err = DB.Ping()
 	if err != nil {
-		log.Fatal("Database not connected:", err)
+		log.Fatal(err)
 	}
 
-	log.Println("Database Connected Successfully")
+	log.Println("DB Connected")
 }

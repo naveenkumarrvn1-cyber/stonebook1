@@ -1,4 +1,4 @@
-package routes
+package ledger
 
 import (
 	"encoding/json"
@@ -15,7 +15,7 @@ func LedgerCreate(w http.ResponseWriter, r *http.Request) {
 	query := `INSERT INTO ledger (ledger_name, ledger_type, ledger_description)
 	          VALUES (?, ?, ?)`
 
-	_, err := constants.DB.Exec(query, ledger.LedgerName, ledger.LedgerType, ledger.LedgerDescription)
+	_, err := constants.DB.Exec(query, ledger.Name, ledger.Type, ledger.Description)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
