@@ -1,4 +1,4 @@
-package contact
+package payment
 
 import (
 	"encoding/json"
@@ -8,7 +8,7 @@ import (
 	"stonebook/constants"
 )
 
-func DeleteContact(w http.ResponseWriter, r *http.Request) {
+func DeletePayment(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method == http.MethodOptions {
 		w.WriteHeader(http.StatusOK)
@@ -21,29 +21,29 @@ func DeleteContact(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	log.Println("🔥 DeleteContact HANDLER STARTED")
+	log.Println("🔥 DeletePayment HANDLER STARTED")
 
 	var p struct {
-		ContactID int `json:"contact_id"`
+		PaymentID int `json:"payment_id"`
 	}
 
 	json.NewDecoder(r.Body).Decode(&p)
 
-	if p.ContactID == 0 {
+	if p.PaymentID == 0 {
 		json.NewEncoder(w).Encode(map[string]interface{}{
 			"status": false,
-			"error":  "contact_id is required",
+			"error":  "payment_id is required",
 		})
 		return
 	}
 
 	constants.DB.Exec(
-		`DELETE FROM contact WHERE contact_id = ?`,
-		p.ContactID,
+		`DELETE FROM payment WHERE payment_id = ?`,
+		p.PaymentID,
 	)
 
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"status":  true,
-		"message": "Contact deleted successfully",
+		"message": "Payment deleted successfully",
 	})
 }

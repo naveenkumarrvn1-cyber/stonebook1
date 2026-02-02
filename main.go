@@ -3,43 +3,55 @@ package main
 import (
 	"log"
 	"net/http"
+	"stonebook/constants"
+	"stonebook/middleware"
 
-	"ledger/constants"
-	"ledger/middleware"
-	contact "ledger/routes/contact"
-	ledger "ledger/routes/ledger"
-
-	"github.com/gorilla/mux"
+	"stonebook/routes/amount"
+	"stonebook/routes/bill"
+	"stonebook/routes/conpay"
+	"stonebook/routes/contact"
+	"stonebook/routes/expense"
+	"stonebook/routes/ledger"
+	"stonebook/routes/payment"
+	"stonebook/routes/product"
+	"stonebook/routes/receipt"
 )
 
 func main() {
-
-	// Connect DB
 	constants.ConnectDB()
 
-	// Create router
-	r := mux.NewRouter()
+	mux := http.NewServeMux()
 
-	// =====================
-	// Ledger Routes
-	// =====================
-	r.HandleFunc("/ledger", ledger.GetLedger).Methods("GET")
-	r.HandleFunc("/ledger", ledger.CreateLedger).Methods("POST")
-	r.HandleFunc("/ledger/{id}", ledger.UpdateLedger).Methods("PUT")
-	r.HandleFunc("/ledger/{id}", ledger.DeleteLedger).Methods("DELETE")
+	mux.HandleFunc("/receipt/create", receipt.CreateReceipt)
+	mux.HandleFunc("/receipt/delete", receipt.DeleteReceipt)
+	mux.HandleFunc("/receipt/list", receipt.ReceiptList)
 
-	// =====================
-	// Contact Routes
-	// =====================
-	r.HandleFunc("/contacts", contact.ContactList).Methods("GET")
-	r.HandleFunc("/contacts/{id}", contact.ContactEdit).Methods("GET")
-	r.HandleFunc("/contacts/{id}", contact.ContactUpdate).Methods("PUT")
-	r.HandleFunc("/contacts/{id}", contact.ContactDelete).Methods("DELETE")
+	mux.HandleFunc("/payment/create", payment.CreatePayment)
+	mux.HandleFunc("/payment/delete", payment.DeletePayment)
+	mux.HandleFunc("/payment/list", payment.PaymentList)
 
-	// Enable CORS
-	handler := middleware.EnableCORS(r)
+	mux.HandleFunc("/expense/create", expense.CreateExpense)
+	mux.HandleFunc("/expense/delete", expense.DeleteExpense)
+	mux.HandleFunc("/expense/list", expense.ExpenseList)
 
-	// Start server
-	log.Println("Server running on :8080")
-	log.Fatal(http.ListenAndServe(":8080", handler))
+	mux.HandleFunc("/product/create", product.CreateProduct)
+	mux.HandleFunc("/product/delete", product.DeleteProduct)
+	mux.HandleFunc("/product/list", product.ProductList)
+
+	mux.HandleFunc("/contact/create", contact.CreateContact)
+	mux.HandleFunc("/contact/delete", contact.DeleteContact)
+	mux.HandleFunc("/contact/list", contact.ContactList)
+
+	mux.HandleFunc("/ledger/create", ledger.CreateLedger)
+	mux.HandleFunc("/ledger/delete", ledger.DeleteLedger)
+	mux.HandleFunc("/ledger/list", ledger.LedgerList)
+
+	mux.HandleFunc("/amount/list", amount.AmountList)
+
+	mux.HandleFunc("/conpay/delete", conpay.DeleteConPay)
+
+	mux.HandleFunc("/bill/list", bill.BillList)
+
+	log.Fatal(http.ListenAndServe(":8080", middleware.EnableCORS(mux)))
+
 }

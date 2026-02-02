@@ -1,12 +1,19 @@
-package ledger
+package receipt
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
+
 	"stonebook/constants"
 )
 
-func CreateLedger(w http.ResponseWriter, r *http.Request) {
+func CreateReceipt(w http.ResponseWriter, r *http.Request) {
+
+	if r.Method == http.MethodOptions {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
 
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
@@ -14,11 +21,10 @@ func CreateLedger(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
+	log.Println("🔥 CreateReceipt HANDLER STARTED")
 
 	var p struct {
-		LedgerType        string `json:"ledger_type"`
-		LedgerName        string `json:"ledger_name"`
-		LedgerDescription string `json:"ledger_description"`
+		ReceiptDate string `json:"receipt_date"`
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&p); err != nil {
@@ -29,24 +35,21 @@ func CreateLedger(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if p.LedgerName == "" {
+	if p.ReceiptDate == "" {
 		json.NewEncoder(w).Encode(map[string]interface{}{
 			"status": false,
-			"error":  "ledger_name is required",
+			"error":  "receipt_date is required",
 		})
 		return
 	}
 
-	result, err := constants.DB.Exec(`
-		INSERT INTO ledger (ledger_type, ledger_name, ledger_description, status)
-		VALUES (?, ?, ?, 1)
-	`,
-		p.LedgerType,
-		p.LedgerName,
-		p.LedgerDescription,
+	result, err := constants.DB.Exec(
+		`INSERT INTO receipt (receipt_date, status) VALUES (?, 1)`,
+		p.ReceiptDate,
 	)
 
 	if err != nil {
+		log.Println("❌ DB ERROR:", err)
 		json.NewEncoder(w).Encode(map[string]interface{}{
 			"status": false,
 			"error":  err.Error(),
@@ -57,8 +60,8 @@ func CreateLedger(w http.ResponseWriter, r *http.Request) {
 	id, _ := result.LastInsertId()
 
 	json.NewEncoder(w).Encode(map[string]interface{}{
-		"status":  true,
-		"message": "Ledger created successfully",
-		"id":      id,
+		"status":     true,
+		"message":    "Receipt created successfully",
+		"receipt_id": id,
 	})
 }

@@ -1,4 +1,4 @@
-package ledger
+package receipt
 
 import (
 	"encoding/json"
@@ -8,9 +8,8 @@ import (
 	"stonebook/constants"
 )
 
-func DeleteLedger(w http.ResponseWriter, r *http.Request) {
+func DeleteReceipt(w http.ResponseWriter, r *http.Request) {
 
-	// CORS preflight
 	if r.Method == http.MethodOptions {
 		w.WriteHeader(http.StatusOK)
 		return
@@ -22,31 +21,25 @@ func DeleteLedger(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	log.Println("🔥 DeleteLedger HANDLER STARTED")
+	log.Println("🔥 DeleteReceipt HANDLER STARTED")
 
 	var p struct {
-		LedgerID int `json:"ledger_id"`
+		ReceiptID int `json:"receipt_id"`
 	}
 
-	if err := json.NewDecoder(r.Body).Decode(&p); err != nil {
-		json.NewEncoder(w).Encode(map[string]interface{}{
-			"status": false,
-			"error":  "Invalid JSON",
-		})
-		return
-	}
+	json.NewDecoder(r.Body).Decode(&p)
 
-	if p.LedgerID == 0 {
+	if p.ReceiptID == 0 {
 		json.NewEncoder(w).Encode(map[string]interface{}{
 			"status": false,
-			"error":  "ledger_id is required",
+			"error":  "receipt_id is required",
 		})
 		return
 	}
 
 	result, err := constants.DB.Exec(
-		`DELETE FROM ledger WHERE id = ?`,
-		p.LedgerID,
+		`DELETE FROM receipt WHERE receipt_id = ?`,
+		p.ReceiptID,
 	)
 
 	if err != nil {
@@ -61,13 +54,13 @@ func DeleteLedger(w http.ResponseWriter, r *http.Request) {
 	if rows == 0 {
 		json.NewEncoder(w).Encode(map[string]interface{}{
 			"status": false,
-			"error":  "No ledger found to delete",
+			"error":  "No receipt found",
 		})
 		return
 	}
 
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"status":  true,
-		"message": "Ledger deleted successfully",
+		"message": "Receipt deleted successfully",
 	})
 }

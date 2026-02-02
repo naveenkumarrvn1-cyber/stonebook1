@@ -1,4 +1,4 @@
-package ledger
+package payment
 
 import (
 	"encoding/json"
@@ -15,19 +15,15 @@ type PaginationPayload struct {
 	Page  int `json:"page"`
 }
 
-/* ---------- Ledger Response Struct (ORDER FIXED) ---------- */
-type LedgerResponse struct {
-	LedgerID          int       `json:"ledger_id"`
-	LedgerType        string    `json:"ledger_type"`
-	LedgerName        string    `json:"ledger_name"`
-	LedgerDescription *string   `json:"ledger_description"`
-	Status            int       `json:"status"`
-	CreatedAt         time.Time `json:"created_at"`
-	UpdatedAt         time.Time `json:"updated_at"`
+/* ---------- Payment Response Struct (ORDER GUARANTEED) ---------- */
+type PaymentResponse struct {
+	PaymentID   int       `json:"payment_id"`
+	PaymentDate time.Time `json:"payment_date"`
+	Status      int       `json:"status"`
 }
 
-/* ---------- LEDGER LIST API ---------- */
-func LedgerList(w http.ResponseWriter, r *http.Request) {
+/* ---------- PAYMENT LIST API ---------- */
+func PaymentList(w http.ResponseWriter, r *http.Request) {
 
 	// CORS
 	if r.Method == http.MethodOptions {
@@ -41,7 +37,7 @@ func LedgerList(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	log.Println("🔥 LedgerList HANDLER STARTED")
+	log.Println("🔥 PaymentList HANDLER STARTED")
 
 	/* ---------- Default pagination ---------- */
 	limit := 10
@@ -68,16 +64,12 @@ func LedgerList(w http.ResponseWriter, r *http.Request) {
 	/* ---------- DB Query ---------- */
 	rows, err := constants.DB.Query(`
 		SELECT
-			id,
-			ledger_type,
-			ledger_name,
-			ledger_description,
-			status,
-			created_at,
-			updated_at
-		FROM ledger
+			payment_id,
+			payment_date,
+			status
+		FROM payment
 		WHERE status = 1
-		ORDER BY id DESC
+		ORDER BY payment_id DESC
 		LIMIT ? OFFSET ?
 	`, limit, offset)
 
@@ -90,37 +82,32 @@ func LedgerList(w http.ResponseWriter, r *http.Request) {
 	}
 	defer rows.Close()
 
-	var ledgers []LedgerResponse
+	var payments []PaymentResponse
 
 	/* ---------- Scan rows ---------- */
 	for rows.Next() {
 
-		var l LedgerResponse
+		var p PaymentResponse
 
 		err := rows.Scan(
-			&l.LedgerID,
-			&l.LedgerType,
-			&l.LedgerName,
-			&l.LedgerDescription,
-			&l.Status,
-			&l.CreatedAt,
-			&l.UpdatedAt,
+			&p.PaymentID,
+			&p.PaymentDate,
+			&p.Status,
 		)
-
 		if err != nil {
 			log.Println("❌ Scan error:", err)
 			continue
 		}
 
-		ledgers = append(ledgers, l)
+		payments = append(payments, p)
 	}
 
-	/* ---------- Final Response ---------- */
+	/* ---------- Final response ---------- */
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"status": true,
 		"limit":  limit,
 		"page":   page,
-		"count":  len(ledgers),
-		"data":   ledgers,
+		"count":  len(payments),
+		"data":   payments,
 	})
 }

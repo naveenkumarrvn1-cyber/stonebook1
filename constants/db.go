@@ -10,21 +10,25 @@ import (
 var DB *sql.DB
 
 func ConnectDB() {
-	var err error
+	dsn := "root:@tcp(127.0.0.1:3306)/stonebook?parseTime=true"
 
-	// IMPORTANT: username = root, password = naveen
-	DB, err = sql.Open(
-		"mysql",
-		"root:naveen@tcp(localhost:3306)/ledgerdb",
-	)
+	db, err := sql.Open("mysql", dsn)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	err = DB.Ping()
-	if err != nil {
+	if err := db.Ping(); err != nil {
 		log.Fatal(err)
 	}
 
-	log.Println("DB Connected")
+	// 🔒 FORCE SINGLE DB POOL
+	db.SetMaxOpenConns(1)
+	db.SetMaxIdleConns(1)
+
+	DB = db
+
+	// 🔥 FINAL PROOF (keep this always)
+	var dbName string
+	db.QueryRow("SELECT DATABASE()").Scan(&dbName)
+	log.Println("✅ CONNECTED TO DB:", dbName)
 }

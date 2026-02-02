@@ -1,12 +1,21 @@
-package ledger
+package product
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
+
 	"stonebook/constants"
 )
 
-func CreateLedger(w http.ResponseWriter, r *http.Request) {
+func CreateProduct(w http.ResponseWriter, r *http.Request) {
+	log.Println("🔥 CreateProduct HANDLER STARTED")
+
+	// CORS preflight
+	if r.Method == http.MethodOptions {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
 
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
@@ -14,39 +23,40 @@ func CreateLedger(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
+	log.Println("🔥 CreateProduct HANDLER STARTED")
 
+	// Payload
 	var p struct {
-		LedgerType        string `json:"ledger_type"`
-		LedgerName        string `json:"ledger_name"`
-		LedgerDescription string `json:"ledger_description"`
+		ProductName string `json:"product_name"`
 	}
 
+	// Decode JSON
 	if err := json.NewDecoder(r.Body).Decode(&p); err != nil {
+		log.Println(" JSON DECODE ERROR:", err)
 		json.NewEncoder(w).Encode(map[string]interface{}{
 			"status": false,
-			"error":  "Invalid JSON",
+			"error":  "Invalid JSON payload",
 		})
 		return
 	}
 
-	if p.LedgerName == "" {
+	if p.ProductName == "" {
 		json.NewEncoder(w).Encode(map[string]interface{}{
 			"status": false,
-			"error":  "ledger_name is required",
+			"error":  "product_name is required",
 		})
 		return
 	}
 
-	result, err := constants.DB.Exec(`
-		INSERT INTO ledger (ledger_type, ledger_name, ledger_description, status)
-		VALUES (?, ?, ?, 1)
-	`,
-		p.LedgerType,
-		p.LedgerName,
-		p.LedgerDescription,
+	// Insert DB
+	result, err := constants.DB.Exec(
+		`INSERT INTO product (product_name, status) VALUES (?, ?)`,
+		p.ProductName,
+		1,
 	)
 
 	if err != nil {
+		log.Println(" DB ERROR:", err)
 		json.NewEncoder(w).Encode(map[string]interface{}{
 			"status": false,
 			"error":  err.Error(),
@@ -58,7 +68,7 @@ func CreateLedger(w http.ResponseWriter, r *http.Request) {
 
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"status":  true,
-		"message": "Ledger created successfully",
+		"message": "Product created successfully",
 		"id":      id,
 	})
 }

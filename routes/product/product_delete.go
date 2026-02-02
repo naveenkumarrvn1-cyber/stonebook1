@@ -1,12 +1,19 @@
-package ledger
+package product
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
+
 	"stonebook/constants"
 )
 
-func CreateLedger(w http.ResponseWriter, r *http.Request) {
+func DeleteProduct(w http.ResponseWriter, r *http.Request) {
+
+	if r.Method == http.MethodOptions {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
 
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
@@ -14,11 +21,10 @@ func CreateLedger(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
+	log.Println("🔥 DeleteProduct HANDLER STARTED")
 
 	var p struct {
-		LedgerType        string `json:"ledger_type"`
-		LedgerName        string `json:"ledger_name"`
-		LedgerDescription string `json:"ledger_description"`
+		ProductID int `json:"product_id"`
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&p); err != nil {
@@ -29,24 +35,21 @@ func CreateLedger(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if p.LedgerName == "" {
+	if p.ProductID == 0 {
 		json.NewEncoder(w).Encode(map[string]interface{}{
 			"status": false,
-			"error":  "ledger_name is required",
+			"error":  "product_id is required",
 		})
 		return
 	}
 
-	result, err := constants.DB.Exec(`
-		INSERT INTO ledger (ledger_type, ledger_name, ledger_description, status)
-		VALUES (?, ?, ?, 1)
-	`,
-		p.LedgerType,
-		p.LedgerName,
-		p.LedgerDescription,
+	result, err := constants.DB.Exec(
+		`DELETE FROM product WHERE product_id = ?`,
+		p.ProductID,
 	)
 
 	if err != nil {
+		log.Println("❌ DB ERROR:", err)
 		json.NewEncoder(w).Encode(map[string]interface{}{
 			"status": false,
 			"error":  err.Error(),
@@ -54,11 +57,17 @@ func CreateLedger(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	id, _ := result.LastInsertId()
+	rows, _ := result.RowsAffected()
+	if rows == 0 {
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"status": false,
+			"error":  "No product found",
+		})
+		return
+	}
 
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"status":  true,
-		"message": "Ledger created successfully",
-		"id":      id,
+		"message": "Product deleted successfully",
 	})
 }
